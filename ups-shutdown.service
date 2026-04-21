@@ -1,0 +1,9 @@
+[Unit]
+Description=Graceful k3s shutdown orchestrator based on NAS UPS status
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/bin/python3 /opt/ups-shutdown/main.py --config /etc/ups-shutdown/config.json

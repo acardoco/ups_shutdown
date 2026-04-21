@@ -1,0 +1,57 @@
+{
+  "general": {
+    "lock_file": "/var/lock/ups-shutdown.lock"
+  },
+  "ups": {
+    "target": "ups0@192.168.1.65",
+    "upsc_binary": "upsc",
+    "require_on_battery": true,
+    "shutdown_charge_lte": 50,
+    "shutdown_runtime_lte": null
+  },
+  "kubernetes": {
+    "kubeconfig": "/etc/rancher/k3s/k3s.yaml",
+    "kubectl_cmd": ["kubectl"],
+    "app_namespaces": ["media", "immich", "nextcloud"],
+    "wait": {
+      "timeout_seconds": 600,
+      "poll_seconds": 10,
+      "ignore_owner_kinds": ["Cluster"],
+      "ignore_pod_prefixes": []
+    },
+    "drain": {
+      "timeout": "10m",
+      "grace_period": 60,
+      "delete_emptydir_data": true,
+      "force": true
+    }
+  },
+  "workers": {
+    "ssh_options": [
+      "-o", "BatchMode=yes",
+      "-o", "ConnectTimeout=10"
+    ],
+    "poweroff_command": ["systemctl", "poweroff"],
+    "poweroff": {
+      "inter_worker_delay_seconds": 10
+    },
+    "nodes": [
+      {
+        "host": "andres-worker-1",
+        "ssh_user": "root",
+        "ssh_port": 22,
+        "use_sudo": false
+      },
+      {
+        "host": "andres-worker-2",
+        "ssh_user": "root",
+        "ssh_port": 22,
+        "use_sudo": false
+      }
+    ]
+  },
+  "master": {
+    "pre_poweroff_delay_seconds": 60,
+    "poweroff_command": ["systemctl", "poweroff"]
+  }
+}
