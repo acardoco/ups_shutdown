@@ -3,7 +3,7 @@
     "lock_file": "/var/lock/ups-shutdown.lock"
   },
   "ups": {
-    "target": "ups0@192.168.1.65",
+    "target": "ups0@172.178.123.12",
     "upsc_binary": "upsc",
     "require_on_battery": true,
     "shutdown_charge_lte": 50,
