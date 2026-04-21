@@ -17,7 +17,8 @@ from typing import Any, Iterable
 
 @dataclass(frozen=True)
 class Worker:
-    host: str
+    k8s_node: str
+    ssh_host: str
     ssh_user: str = "root"
     ssh_port: int = 22
     use_sudo: bool = False
@@ -210,10 +211,10 @@ class UPSShutdownController:
         force = drain_cfg.get("force", True)
 
         for worker in self._workers():
-            self.log.info("Draining worker %s", worker.host)
+            self.log.info("Draining worker %s", worker.k8s_node)
             cmd = [
                 "drain",
-                worker.host,
+                worker.k8s_node,
                 "--ignore-daemonsets",
                 f"--grace-period={grace}",
                 f"--timeout={timeout}",
@@ -228,7 +229,7 @@ class UPSShutdownController:
         wait_cfg = self.config["workers"].get("poweroff", {})
         inter_worker_delay = int(wait_cfg.get("inter_worker_delay_seconds", 10))
         for worker in self._workers():
-            self.log.info("Powering off worker %s", worker.host)
+            self.log.info("Powering off worker %s via %s", worker.k8s_node, worker.ssh_host)
             command = self._worker_poweroff_command(worker)
             self._run_cmd(command, check=False)
             time.sleep(inter_worker_delay)
@@ -263,22 +264,31 @@ class UPSShutdownController:
         remote_command = self.config["workers"].get("poweroff_command", ["systemctl", "poweroff"])
         remote = shlex.join(remote_command)
         if worker.use_sudo:
-            remote = f"sudo {remote}"
+            remote = f"sudo -n {remote}"
         return [
             "ssh",
             "-p",
             str(worker.ssh_port),
             *ssh_options,
-            f"{worker.ssh_user}@{worker.host}",
+            f"{worker.ssh_user}@{worker.ssh_host}",
             remote,
         ]
 
     def _workers(self) -> list[Worker]:
         workers: list[Worker] = []
         for item in self.config["workers"]["nodes"]:
+            k8s_node = item.get("k8s_node") or item.get("host")
+            ssh_host = item.get("ssh_host") or item.get("host")
+
+            if not k8s_node:
+                raise UPSShutdownError("Worker config missing 'k8s_node' (or legacy 'host')")
+            if not ssh_host:
+                raise UPSShutdownError(f"Worker {k8s_node} missing 'ssh_host' (or legacy 'host')")
+
             workers.append(
                 Worker(
-                    host=item["host"],
+                    k8s_node=k8s_node,
+                    ssh_host=ssh_host,
                     ssh_user=item.get("ssh_user", "root"),
                     ssh_port=int(item.get("ssh_port", 22)),
                     use_sudo=bool(item.get("use_sudo", False)),
