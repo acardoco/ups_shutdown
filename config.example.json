@@ -3,7 +3,7 @@
     "lock_file": "/var/lock/ups-shutdown.lock"
   },
   "ups": {
-    "target": "ups0@192.168.1.65",
+    "target": "ups0@122.138.123.34",
     "upsc_binary": "upsc",
     "require_on_battery": true,
     "shutdown_charge_lte": 50,
@@ -37,14 +37,14 @@
     },
     "nodes": [
       {
-        "host": "andres-worker-2",
-        "ssh_user": "andres-nfs",
+        "host": "worker1",
+        "ssh_user": "user1",
         "ssh_port": 22,
         "use_sudo": true
       },
       {
-        "host": "andres-worker-intel",
-        "ssh_user": "andres-worker",
+        "host": "worker2",
+        "ssh_user": "user2",
         "ssh_port": 22,
         "use_sudo": true
       }
