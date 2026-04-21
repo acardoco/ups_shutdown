@@ -98,7 +98,20 @@ class UPSShutdownController:
 
     def get_ups_snapshot(self) -> dict[str, str]:
         command = [self.config["ups"].get("upsc_binary", "upsc"), self.config["ups"]["target"]]
-        result = self._run_cmd(command, capture_output=True)
+
+        # Leer el UPS siempre de verdad, incluso en dry-run, porque es una operación segura
+        result = subprocess.run(
+            command,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            msg = f"Command failed ({result.returncode}): {shlex.join(command)}"
+            if result.stderr:
+                msg += f" | stderr={result.stderr.strip()}"
+            raise UPSShutdownError(msg)
+
         data: dict[str, str] = {}
         for line in result.stdout.splitlines():
             if ":" not in line:
